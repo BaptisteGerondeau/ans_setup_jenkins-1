@@ -16,5 +16,7 @@ Remote CLI is disabled at install, you can enable it by setting it in jenkins.CL
 This is for the portability of the LDAP manager password secret. 
 OF COURSE THOSE ARE NOT INCLUDED IN THIS REPO AND SHOULD NEVER BE SHARED.
 
+!!WARNING!! Agent to Master security has to be enabled manually, as I was not (yet) able to find the file to change.
+
 Working install with a KVM preseeded with Debian9, root SSH login configured via SSH public key and Ansible 2.4.3.0 and using
 the '-u root' flag.
