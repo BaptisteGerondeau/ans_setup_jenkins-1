@@ -1,0 +1,13 @@
+- name: Configure HPC lab's Jenkins
+  hosts: jenkins
+
+  vars_files:
+          - ./vars/jenkins-plugins.yml
+  sudo: True
+  roles:
+          - git
+          - curl
+          - openjdk 
+          - unzip 
+          - geerlingguy.jenkins
+

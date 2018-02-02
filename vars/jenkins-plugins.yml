@@ -1,0 +1,1 @@
+jenkins_plugins: ['git', 'ssh-slaves', 'ldap', 'ssh', 'mailer', 'credentials-binding']

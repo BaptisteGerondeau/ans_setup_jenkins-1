@@ -1,0 +1,103 @@
+---
+# jenkins_plugin module doesn't support password files.
+- name: Get Jenkins admin password from file.
+  slurp:
+    src: "{{ jenkins_admin_password_file }}"
+  register: adminpasswordfile
+  no_log: True
+  when: jenkins_admin_password_file != ""
+
+- name: Set Jenkins admin password fact.
+  set_fact:
+    jenkins_admin_password: "{{ adminpasswordfile['stdout'] | default(jenkins_admin_password) }}"
+  no_log: True
+
+- name: Get Jenkins admin token from file.
+  slurp:
+    src: "{{ jenkins_admin_token_file }}"
+  register: admintokenfile
+  no_log: True
+  when: jenkins_admin_token_file != ""
+
+- name: Set Jenkins admin token fact.
+  set_fact:
+    jenkins_admin_token: "{{ admintokenfile['stdout'] | default(jenkins_admin_token) }}"
+  no_log: True
+
+# Update Jenkins so that plugin updates don't fail
+- name: Create update directory
+  file: 
+    path: "{{ jenkins_home }}/updates"
+    state: directory
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"
+
+- name: Download current plugin updates from Jenkins update site
+  get_url:
+    url: http://updates.jenkins-ci.org/update-center.json
+    dest: "{{ jenkins_home}}/updates/default.json"
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"
+    mode: 0440
+
+- name: Remove first and last line from json file
+  replace: 
+    path: "{{ jenkins_home }}/updates/default.json"
+    regexp: "1d;$d"
+
+- name: Copy list of plugins on the new jenkins machine as Ansible's script module is stupid
+  copy:
+          src: "plugins{{ jenkins_version }}.txt"
+          dest: "{{ jenkins_home }}"
+          mode: 777
+
+- name: Copy jenkins-support function lib necessary for below install-plugins script
+  copy:
+          src: jenkins-support
+          dest: /usr/local/bin/
+          mode: 777
+
+- name: Install plugins with docker install-plugin.sh script.
+  script: scripts/install-plugins.sh < "{{ jenkins_home }}/plugins{{ jenkins_version }}.txt"
+  notify: restart jenkins
+
+- name: Copy java cacerts for LDAPs
+  copy:
+          src: secret_cacerts
+          dest: /etc/ssl/certs/java/cacerts
+          owner: root
+          group: root
+          mode: 0644
+
+- name: Copy hudson's secret for LDAP
+  copy:
+          src: secret_hudson.util.Secret
+          dest: "{{ jenkins_home }}/secrets/hudson.util.Secret"
+          owner: "{{ jenkins_process_user }}"
+          group: "{{ jenkins_process_group }}"
+          mode: 0644
+
+- name: Copy master key for LDAP
+  copy:
+          src: secret_master.key
+          dest: "{{ jenkins_home }}/secrets/master.key"
+          owner: "{{ jenkins_process_user }}"
+          group: "{{ jenkins_process_group }}"
+          mode: 0600
+
+- name: Disable CLI because security liability
+  copy:
+          src: jenkins.CLI.xml
+          dest: "{{ jenkins_home }}/jenkins.CLI.xml"
+          owner: "{{ jenkins_process_user }}"
+          group: "{{ jenkins_process_group }}"
+          mode: 0600
+
+- name: Copy "known good" config.xml file to new Jenkins
+  copy:
+          src: secret_config.xml
+          dest: "{{ jenkins_home}}/config.xml"
+          owner: "{{ jenkins_process_user }}"
+          group: "{{ jenkins_process_group }}"
+          mode: 0600
+  notify: restart jenkins
