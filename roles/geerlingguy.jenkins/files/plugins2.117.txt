@@ -37,3 +37,4 @@ workflow-scm-step:2.6
 ssh-credentials:1.13
 workflow-step-api:2.14
 credentials:2.1.16
+simple-theme-plugin:0.4
