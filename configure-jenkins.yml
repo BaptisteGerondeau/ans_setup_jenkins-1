@@ -1,9 +1,7 @@
 - name: Configure HPC lab's Jenkins
   hosts: jenkins
-
-  vars_files:
-          - ./vars/jenkins-plugins.yml
-  sudo: True
+  vars:
+          - jenkins_version: "2.117"
   roles:
           - git
           - curl
